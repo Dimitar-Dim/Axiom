@@ -61,12 +61,40 @@ struct ProfileView: View {
                         }
                         .padding(.top, 40)
                     }
+
+                    // Preferences & History
+                    VStack(spacing: 0) {
+                        navRow(icon: "slider.horizontal.3", label: "Preferences")
+                        Divider().padding(.horizontal, 16)
+                        navRow(icon: "clock", label: "History")
+                    }
+                    .background(Color(.systemBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .shadow(color: .black.opacity(0.07), radius: 10, x: 0, y: 3)
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
                 .padding(.bottom, 40)
             }
         }
+    }
+
+    private func navRow(icon: String, label: String) -> some View {
+        HStack(spacing: 14) {
+            Image(systemName: icon)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(.secondary)
+                .frame(width: 24)
+            Text(label)
+                .font(.subheadline)
+                .fontWeight(.medium)
+            Spacer()
+            Image(systemName: "chevron.right")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.tertiary)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
     }
 
     @ViewBuilder
