@@ -1,6 +1,6 @@
 # Axiom
 
-A clean iOS news reader UI built with SwiftUI. Features a card-based article feed, tab navigation, and a profile screen for managing followed topics and publishers.
+A clean iOS news reader UI built with SwiftUI. Will feature an AI-based algorithm that will allow each user to have a custom feed, tailored for them.
 
 ## Features
 
@@ -9,7 +9,6 @@ A clean iOS news reader UI built with SwiftUI. Features a card-based article fee
 - Bottom tab bar with Explore, Home, and Favorites sections
 - Floating top header with profile sheet trigger
 - Profile screen showing followed topics and publishers with article counts
-- Collapsible follow sections with spring animations
 - Preferences and History navigation rows
 
 ## Tech Stack
