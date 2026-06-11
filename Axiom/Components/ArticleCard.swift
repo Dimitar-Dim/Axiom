@@ -1,7 +1,10 @@
 import SwiftUI
 
 struct ArticleCard: View {
-    @Binding var article: Article
+    let article: Article
+    let isPublisherFollowed: Bool
+    let onTogglePublisher: () -> Void
+    let onSelectTag: (String) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -36,12 +39,12 @@ struct ArticleCard: View {
             HStack(spacing: 8) {
                 Button {
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                        article.isLiked.toggle()
+                        onTogglePublisher()
                     }
                 } label: {
-                    Image(systemName: article.isLiked ? "heart.fill" : "heart")
+                    Image(systemName: isPublisherFollowed ? "heart.fill" : "heart")
                         .font(.system(size: 17, weight: .medium))
-                        .foregroundStyle(article.isLiked ? Color.red : Color.primary)
+                        .foregroundStyle(isPublisherFollowed ? Color.red : Color.primary)
                         .contentTransition(.symbolEffect(.replace))
                 }
                 .buttonStyle(.plain)
@@ -49,15 +52,15 @@ struct ArticleCard: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 6) {
                         ForEach(article.tags, id: \.self) { tag in
-                            Text(tag)
-                                .font(.caption)
-                                .fontWeight(.medium)
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 5)
-                                .overlay(
-                                    Capsule()
-                                        .stroke(Color(.systemGray3), lineWidth: 1)
-                                )
+                            Button { onSelectTag(tag) } label: {
+                                Text(tag)
+                                    .font(.caption)
+                                    .fontWeight(.medium)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 5)
+                                    .overlay(Capsule().stroke(Color(.systemGray3), lineWidth: 1))
+                            }
+                            .buttonStyle(.plain)
                         }
                     }
                 }

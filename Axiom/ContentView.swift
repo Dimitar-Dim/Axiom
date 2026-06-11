@@ -7,6 +7,8 @@ enum AppTab {
 struct ContentView: View {
     @State private var selectedTab: AppTab = .home
     @State private var showProfile = false
+    @State private var followedTopics: [FollowedTopic] = []
+    @State private var followedPublishers: [FollowedPublisher] = []
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -15,9 +17,12 @@ struct ContentView: View {
                 case .explore:
                     PlaceholderView(title: "Explore")
                 case .home:
-                    HomeView()
+                    HomeView(followedPublishers: $followedPublishers, followedTopics: $followedTopics)
                 case .favorites:
-                    PlaceholderView(title: "Favorites")
+                    FavoritesView(
+                        followedPublishers: $followedPublishers,
+                        followedTopics: $followedTopics
+                    )
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -31,7 +36,7 @@ struct ContentView: View {
         }
         .ignoresSafeArea(edges: .bottom)
         .sheet(isPresented: $showProfile) {
-            ProfileView()
+            ProfileView(topics: $followedTopics, publishers: $followedPublishers)
         }
     }
 }

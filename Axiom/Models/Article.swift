@@ -6,7 +6,6 @@ struct Article: Identifiable {
     let publisher: String
     let tags: [String]
     let publishedAt: String
-    var isLiked: Bool = false
 }
 
 extension Article {
@@ -18,10 +17,22 @@ extension Article {
             publishedAt: "2h ago"
         ),
         Article(
+            headline: "AI-Powered Drug Discovery Enters Clinical Trials",
+            publisher: "MIT Review",
+            tags: ["AI", "Health", "Science"],
+            publishedAt: "5h ago"
+        ),
+        Article(
             headline: "Climate Change and Its Economic Impact on Global Markets",
             publisher: "The Economist",
             tags: ["Climate", "Economy", "Policy"],
             publishedAt: "4h ago"
+        ),
+        Article(
+            headline: "The Global Energy Transition Is Rewriting Geopolitics",
+            publisher: "The Economist",
+            tags: ["Climate", "Policy", "Science"],
+            publishedAt: "7h ago"
         ),
         Article(
             headline: "SwiftUI 6: What's New for Apple Developers This Fall",
@@ -30,10 +41,22 @@ extension Article {
             publishedAt: "6h ago"
         ),
         Article(
+            headline: "Async/Await in Practice: Real-World SwiftUI Patterns",
+            publisher: "Swift Blog",
+            tags: ["Swift", "iOS", "Dev"],
+            publishedAt: "10h ago"
+        ),
+        Article(
             headline: "SpaceX Starship's Latest Mission Breaks Records",
             publisher: "Space.com",
             tags: ["Space", "Science"],
             publishedAt: "8h ago"
+        ),
+        Article(
+            headline: "James Webb Telescope Captures Earliest Galaxies Ever Seen",
+            publisher: "Space.com",
+            tags: ["Space", "Science", "Tech"],
+            publishedAt: "1d ago"
         ),
         Article(
             headline: "Inside the Rise of Decentralised Finance",
@@ -42,10 +65,22 @@ extension Article {
             publishedAt: "1d ago"
         ),
         Article(
+            headline: "Bitcoin ETFs Hit Record Inflows as Institutions Pile In",
+            publisher: "Bloomberg",
+            tags: ["Finance", "Crypto", "Economy"],
+            publishedAt: "2d ago"
+        ),
+        Article(
             headline: "How Quantum Computing Will Transform Cybersecurity",
             publisher: "Wired",
             tags: ["Quantum", "Security", "Tech"],
             publishedAt: "1d ago"
+        ),
+        Article(
+            headline: "The AI Arms Race: Big Tech's Battle for Supremacy",
+            publisher: "Wired",
+            tags: ["AI", "Tech", "Policy"],
+            publishedAt: "2d ago"
         ),
     ]
 }

@@ -3,6 +3,7 @@ import Foundation
 struct FollowedTopic: Identifiable {
     let id = UUID()
     let name: String
+    let tag: String
     let articleCount: Int
 }
 
@@ -14,12 +15,12 @@ struct FollowedPublisher: Identifiable {
 
 extension FollowedTopic {
     static let samples: [FollowedTopic] = [
-        FollowedTopic(name: "Artificial Intelligence", articleCount: 14),
-        FollowedTopic(name: "Climate & Environment", articleCount: 9),
-        FollowedTopic(name: "iOS Development", articleCount: 22),
-        FollowedTopic(name: "Space Exploration", articleCount: 6),
-        FollowedTopic(name: "Finance & Economy", articleCount: 11),
-        FollowedTopic(name: "Cybersecurity", articleCount: 5),
+        FollowedTopic(name: "Artificial Intelligence", tag: "AI",      articleCount: 14),
+        FollowedTopic(name: "Climate & Environment",   tag: "Climate", articleCount: 9),
+        FollowedTopic(name: "iOS Development",         tag: "iOS",     articleCount: 22),
+        FollowedTopic(name: "Space Exploration",       tag: "Space",   articleCount: 6),
+        FollowedTopic(name: "Finance & Economy",       tag: "Finance", articleCount: 11),
+        FollowedTopic(name: "Cybersecurity",           tag: "Security",articleCount: 5),
     ]
 }
 
