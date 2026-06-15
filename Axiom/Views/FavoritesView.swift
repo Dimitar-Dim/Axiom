@@ -38,6 +38,11 @@ struct FavoritesView: View {
                 Text("Nothing here yet")
                     .font(.title2.bold())
                     .foregroundStyle(.secondary)
+                Text("Follow topics or publishers to see their posts here!")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 40)
                 Spacer()
             }
         } else {
