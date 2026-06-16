@@ -10,11 +10,17 @@ struct HomeView: View {
     @State private var activePublisherFilter: String? = nil
     @State private var selectedArticle: Article? = nil
     @State private var displayCount = 20
+    @State private var rankedFeed: [Article] = []
 
     private let articles = Article.samples
 
+    private func refreshFeed() {
+        rankedFeed = RecommendationEngine.rank(articles: articles, profile: profile, readHistory: readHistory)
+        displayCount = 20
+    }
+
     private var filteredArticles: [Article] {
-        var result = articles
+        var result = rankedFeed
         if let tag = activeTagFilter {
             result = result.filter { $0.tags.contains(tag) }
         }
@@ -28,10 +34,6 @@ struct HomeView: View {
                 $0.publisher.lowercased().contains(q) ||
                 $0.tags.contains(where: { $0.lowercased().contains(q) })
             }
-        }
-        // Apply recommendation ranking only on the unfiltered main feed
-        if activeTagFilter == nil && activePublisherFilter == nil && searchText.isEmpty {
-            return RecommendationEngine.rank(articles: result, profile: profile, readHistory: readHistory)
         }
         return result
     }
@@ -129,6 +131,7 @@ struct HomeView: View {
             .padding(.top, 8)
             .padding(.bottom, 110)
         }
+        .refreshable { refreshFeed() }
         .scrollDismissesKeyboard(.immediately)
         .safeAreaInset(edge: .top) { Color.clear.frame(height: 114) }
         .sheet(item: $selectedArticle) { article in
@@ -158,6 +161,7 @@ struct HomeView: View {
         }
         } // end else
         }  // end Group
+        .onAppear { if rankedFeed.isEmpty { refreshFeed() } }
         .onChange(of: searchText) { displayCount = 20 }
         .onChange(of: activeTagFilter) { if let tag = $1 { activePublisherFilter = nil; profile.record(.tagFiltered(tag: tag)) } }
         .onChange(of: activePublisherFilter) { if let pub = $1 { activeTagFilter = nil; profile.record(.publisherFiltered(name: pub)) } }
