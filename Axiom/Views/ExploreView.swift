@@ -24,12 +24,20 @@ struct ExploreView: View {
     @State private var showRegionPicker = false
     @State private var selectedArticle: Article? = nil
     @State private var displayCount = 20
+    @State private var activeTagFilter: String? = nil
+    @State private var activePublisherFilter: String? = nil
 
     private let allArticles = Article.samples
 
     private var regionArticles: [Article] {
         var result = allArticles.filter {
             $0.location?.contains(selectedRegion.rawValue) == true
+        }
+        if let tag = activeTagFilter {
+            result = result.filter { $0.tags.contains(tag) }
+        }
+        if let publisher = activePublisherFilter {
+            result = result.filter { $0.publisher == publisher }
         }
         if !searchText.isEmpty {
             let q = searchText.lowercased()
@@ -42,10 +50,7 @@ struct ExploreView: View {
         return result.sorted { ageMinutes($0.publishedAt) < ageMinutes($1.publishedAt) }
     }
 
-    private var displayedArticles: [Article] {
-        Array(regionArticles.prefix(displayCount))
-    }
-
+    private var displayedArticles: [Article] { Array(regionArticles.prefix(displayCount)) }
     private var hasMore: Bool { displayCount < regionArticles.count }
 
     private func ageMinutes(_ s: String) -> Int {
@@ -57,18 +62,23 @@ struct ExploreView: View {
     private func isPublisherFollowed(_ publisher: String) -> Bool {
         followedPublishers.contains(where: { $0.name == publisher })
     }
-
+    private func isTopicFollowed(_ tag: String) -> Bool {
+        followedTopics.contains(where: { $0.tag == tag })
+    }
     private func recordRead(_ article: Article) {
         readHistory.removeAll { $0.id == article.id }
         readHistory.insert(article, at: 0)
     }
-
     private func togglePublisher(_ publisher: String) {
         if let i = followedPublishers.firstIndex(where: { $0.name == publisher }) {
             followedPublishers.remove(at: i)
         } else {
             followedPublishers.append(FollowedPublisher(name: publisher, articleCount: 0))
         }
+    }
+    private func followTopic(_ tag: String) {
+        guard !isTopicFollowed(tag) else { return }
+        followedTopics.append(FollowedTopic(name: tag, tag: tag, articleCount: 0))
     }
 
     var body: some View {
@@ -82,36 +92,59 @@ struct ExploreView: View {
                     Text("No articles for \(selectedRegion.rawValue)")
                         .font(.title3.bold())
                         .foregroundStyle(.secondary)
-                    Button { showRegionPicker = true } label: {
-                        Text("Change region")
-                            .font(.subheadline.bold())
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 10)
-                            .background(Color.accentColor)
-                            .clipShape(Capsule())
+                    if activeTagFilter != nil || activePublisherFilter != nil {
+                        Button {
+                            withAnimation { activeTagFilter = nil; activePublisherFilter = nil }
+                        } label: {
+                            Text("Clear filter")
+                                .font(.subheadline.bold())
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 20).padding(.vertical, 10)
+                                .background(Color.accentColor)
+                                .clipShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        Button { showRegionPicker = true } label: {
+                            Text("Change region")
+                                .font(.subheadline.bold())
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 20).padding(.vertical, 10)
+                                .background(Color.accentColor)
+                                .clipShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
-                    .padding(.top, 4)
                     Spacer()
                 }
             } else {
                 ScrollView {
                     LazyVStack(spacing: 12) {
                         locationHeader
+                        if let tag = activeTagFilter       { tagBanner(for: tag) }
+                        if let pub = activePublisherFilter { publisherBanner(for: pub) }
 
                         ForEach(displayedArticles) { article in
                             ArticleCard(
                                 article: article,
                                 isPublisherFollowed: isPublisherFollowed(article.publisher),
                                 onTogglePublisher: { togglePublisher(article.publisher) },
-                                onSelectTag: { _ in },
+                                onSelectTag: { tag in
+                                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                        activeTagFilter = activeTagFilter == tag ? nil : tag
+                                        displayCount = 20
+                                    }
+                                },
+                                onSelectPublisher: { pub in
+                                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                        activePublisherFilter = activePublisherFilter == pub ? nil : pub
+                                        displayCount = 20
+                                    }
+                                },
                                 onTap: { recordRead(article); selectedArticle = article }
                             )
                             .onAppear {
-                                if article.id == displayedArticles.last?.id && hasMore {
-                                    displayCount += 10
-                                }
+                                if article.id == displayedArticles.last?.id && hasMore { displayCount += 10 }
                             }
                         }
                     }
@@ -128,47 +161,147 @@ struct ExploreView: View {
                 article: article,
                 isPublisherFollowed: isPublisherFollowed(article.publisher),
                 onTogglePublisher: { togglePublisher(article.publisher) },
-                onSelectTag: { _ in }
+                onSelectTag: { tag in
+                    selectedArticle = nil
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        activeTagFilter = tag; displayCount = 20
+                    }
+                },
+                onSelectPublisher: { pub in
+                    selectedArticle = nil
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        activePublisherFilter = activePublisherFilter == pub ? nil : pub
+                        displayCount = 20
+                    }
+                }
             )
             .presentationDragIndicator(.visible)
         }
-        .onChange(of: selectedRegion) { displayCount = 20 }
-        .onChange(of: searchText)     { displayCount = 20 }
+        .onChange(of: selectedRegion)        { activeTagFilter = nil; activePublisherFilter = nil; displayCount = 20 }
+        .onChange(of: searchText)            { displayCount = 20 }
+        .onChange(of: activeTagFilter)       { if $1 != nil { activePublisherFilter = nil } }
+        .onChange(of: activePublisherFilter) { if $1 != nil { activeTagFilter = nil } }
     }
+
+    // MARK: – Banners
+
+    @ViewBuilder
+    private func tagBanner(for tag: String) -> some View {
+        let followed = isTopicFollowed(tag)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(tag)
+                    .font(.caption.bold())
+                    .foregroundStyle(Color.accentColor)
+                    .padding(.horizontal, 10).padding(.vertical, 4)
+                    .background(Color.accentColor.opacity(0.1))
+                    .clipShape(Capsule())
+                Spacer()
+                Button {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { activeTagFilter = nil }
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(Color(.systemGray3)).font(.system(size: 18))
+                }
+                .buttonStyle(.plain)
+            }
+            if followed {
+                HStack(spacing: 6) {
+                    Image(systemName: "checkmark.circle.fill").font(.subheadline).foregroundStyle(.green)
+                    Text("You're following \(tag)").font(.subheadline).foregroundStyle(.secondary)
+                }
+            } else {
+                HStack {
+                    Text("Interested in \(tag)?").font(.subheadline).foregroundStyle(.secondary)
+                    Spacer()
+                    Button { withAnimation { followTopic(tag) } } label: {
+                        Text("Follow topic").font(.subheadline.bold()).foregroundStyle(.white)
+                            .padding(.horizontal, 14).padding(.vertical, 6)
+                            .background(Color.accentColor).clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .padding(14)
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: .black.opacity(0.07), radius: 10, x: 0, y: 3)
+    }
+
+    @ViewBuilder
+    private func publisherBanner(for publisher: String) -> some View {
+        let theme = PublisherTheme.of(publisher)
+        let followed = isPublisherFollowed(publisher)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                HStack(spacing: 6) {
+                    ZStack {
+                        Circle().fill(theme.color).frame(width: 16, height: 16)
+                        Text(String(theme.initials.prefix(1))).font(.system(size: 8, weight: .bold)).foregroundStyle(.white)
+                    }
+                    Text(publisher).font(.caption.bold()).foregroundStyle(theme.color)
+                }
+                .padding(.horizontal, 10).padding(.vertical, 4)
+                .background(theme.color.opacity(0.1)).clipShape(Capsule())
+                Spacer()
+                Button {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { activePublisherFilter = nil }
+                } label: {
+                    Image(systemName: "xmark.circle.fill").foregroundStyle(Color(.systemGray3)).font(.system(size: 18))
+                }
+                .buttonStyle(.plain)
+            }
+            if followed {
+                HStack(spacing: 6) {
+                    Image(systemName: "checkmark.circle.fill").font(.subheadline).foregroundStyle(.green)
+                    Text("You're following \(publisher)").font(.subheadline).foregroundStyle(.secondary)
+                }
+            } else {
+                HStack {
+                    Text("Follow \(publisher)?").font(.subheadline).foregroundStyle(.secondary)
+                    Spacer()
+                    Button { withAnimation { togglePublisher(publisher) } } label: {
+                        Text("Follow").font(.subheadline.bold()).foregroundStyle(.white)
+                            .padding(.horizontal, 14).padding(.vertical, 6)
+                            .background(Color.accentColor).clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .padding(14)
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: .black.opacity(0.07), radius: 10, x: 0, y: 3)
+    }
+
+    // MARK: – Header & Picker
 
     private var locationHeader: some View {
         HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: 2) {
                 Text("LOCAL NEWS")
-                    .font(.caption2.bold())
-                    .foregroundStyle(.secondary)
-                    .tracking(1)
+                    .font(.caption2.bold()).foregroundStyle(.secondary).tracking(1)
                 HStack(spacing: 6) {
                     Image(systemName: "location.fill")
-                        .font(.subheadline.bold())
-                        .foregroundStyle(Color.accentColor)
-                    Text(selectedRegion.rawValue)
-                        .font(.title3.bold())
+                        .font(.subheadline.bold()).foregroundStyle(Color.accentColor)
+                    Text(selectedRegion.rawValue).font(.title3.bold())
                 }
             }
             Spacer()
             Button { showRegionPicker = true } label: {
                 HStack(spacing: 4) {
-                    Text("Change")
-                        .font(.subheadline.bold())
-                    Image(systemName: "chevron.down")
-                        .font(.caption2.bold())
+                    Text("Change").font(.subheadline.bold())
+                    Image(systemName: "chevron.down").font(.caption2.bold())
                 }
                 .foregroundStyle(Color.accentColor)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
-                .background(Color.accentColor.opacity(0.1))
-                .clipShape(Capsule())
+                .padding(.horizontal, 14).padding(.vertical, 8)
+                .background(Color.accentColor.opacity(0.1)).clipShape(Capsule())
             }
             .buttonStyle(.plain)
         }
-        .padding(.horizontal, 2)
-        .padding(.bottom, 4)
+        .padding(.horizontal, 2).padding(.bottom, 4)
     }
 
     private var regionPickerSheet: some View {
@@ -179,14 +312,10 @@ struct ExploreView: View {
                     showRegionPicker = false
                 } label: {
                     HStack {
-                        Text(region.rawValue)
-                            .font(.body)
-                            .foregroundStyle(.primary)
+                        Text(region.rawValue).font(.body).foregroundStyle(.primary)
                         Spacer()
                         if region == selectedRegion {
-                            Image(systemName: "checkmark")
-                                .foregroundStyle(Color.accentColor)
-                                .font(.subheadline.bold())
+                            Image(systemName: "checkmark").foregroundStyle(Color.accentColor).font(.subheadline.bold())
                         }
                     }
                 }
@@ -195,8 +324,7 @@ struct ExploreView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { showRegionPicker = false }
-                        .fontWeight(.semibold)
+                    Button("Done") { showRegionPicker = false }.fontWeight(.semibold)
                 }
             }
         }
