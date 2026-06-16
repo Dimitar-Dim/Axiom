@@ -5,16 +5,35 @@ struct ArticleCard: View {
     let isPublisherFollowed: Bool
     let onTogglePublisher: () -> Void
     let onSelectTag: (String) -> Void
+    var onTap: () -> Void = {}
 
     var body: some View {
+        Button { onTap() } label: { cardContent }
+            .buttonStyle(.plain)
+    }
+
+    private var cardContent: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .top, spacing: 12) {
                 VStack(alignment: .leading, spacing: 6) {
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(Color(.systemGray5))
-                        .frame(width: 88, height: 88)
+                    AsyncImage(url: URL(string: article.imageURL)) { image in
+                        image.resizable().aspectRatio(contentMode: .fill)
+                    } placeholder: {
+                        Color(.systemGray5)
+                    }
+                    .frame(width: 88, height: 88)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
 
-                    HStack(spacing: 4) {
+                    HStack(spacing: 5) {
+                        let theme = PublisherTheme.of(article.publisher)
+                        Circle()
+                            .fill(theme.color)
+                            .frame(width: 14, height: 14)
+                            .overlay(
+                                Text(String(theme.initials.prefix(1)))
+                                    .font(.system(size: 7, weight: .bold))
+                                    .foregroundStyle(.white)
+                            )
                         Text(article.publisher)
                             .font(.caption)
                             .foregroundStyle(.secondary)

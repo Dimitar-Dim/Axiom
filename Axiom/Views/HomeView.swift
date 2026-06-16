@@ -4,6 +4,7 @@ struct HomeView: View {
     @Binding var followedPublishers: [FollowedPublisher]
     @Binding var followedTopics: [FollowedTopic]
     @State private var activeTagFilter: String? = nil
+    @State private var selectedArticle: Article? = nil
 
     private let articles = Article.samples
 
@@ -48,7 +49,8 @@ struct HomeView: View {
                             withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                                 activeTagFilter = activeTagFilter == tag ? nil : tag
                             }
-                        }
+                        },
+                        onTap: { selectedArticle = article }
                     )
                 }
             }
@@ -57,6 +59,20 @@ struct HomeView: View {
             .padding(.bottom, 110)
         }
         .safeAreaInset(edge: .top) { Color.clear.frame(height: 114) }
+        .sheet(item: $selectedArticle) { article in
+            ArticleDetailView(
+                article: article,
+                isPublisherFollowed: isPublisherFollowed(article.publisher),
+                onTogglePublisher: { togglePublisher(article.publisher) },
+                onSelectTag: { tag in
+                    selectedArticle = nil
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        activeTagFilter = tag
+                    }
+                }
+            )
+            .presentationDragIndicator(.visible)
+        }
     }
 
     @ViewBuilder

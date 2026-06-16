@@ -3,6 +3,7 @@ import SwiftUI
 struct FavoritesView: View {
     @Binding var followedPublishers: [FollowedPublisher]
     @Binding var followedTopics: [FollowedTopic]
+    @State private var selectedArticle: Article? = nil
 
     private let articles = Article.samples
 
@@ -53,7 +54,8 @@ struct FavoritesView: View {
                             article: article,
                             isPublisherFollowed: isPublisherFollowed(article.publisher),
                             onTogglePublisher: { togglePublisher(article.publisher) },
-                            onSelectTag: { _ in }
+                            onSelectTag: { _ in },
+                            onTap: { selectedArticle = article }
                         )
                     }
                 }
@@ -62,6 +64,15 @@ struct FavoritesView: View {
                 .padding(.bottom, 110)
             }
             .safeAreaInset(edge: .top) { Color.clear.frame(height: 114) }
+            .sheet(item: $selectedArticle) { article in
+                ArticleDetailView(
+                    article: article,
+                    isPublisherFollowed: isPublisherFollowed(article.publisher),
+                    onTogglePublisher: { togglePublisher(article.publisher) },
+                    onSelectTag: { _ in }
+                )
+                .presentationDragIndicator(.visible)
+            }
         }
     }
 }
