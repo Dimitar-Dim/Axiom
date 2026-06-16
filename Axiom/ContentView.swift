@@ -7,6 +7,7 @@ enum AppTab {
 struct ContentView: View {
     @State private var selectedTab: AppTab = .home
     @State private var showProfile = false
+    @State private var searchText = ""
     @State private var followedTopics: [FollowedTopic] = []
     @State private var followedPublishers: [FollowedPublisher] = []
 
@@ -15,19 +16,20 @@ struct ContentView: View {
             Group {
                 switch selectedTab {
                 case .explore:
-                    PlaceholderView(title: "Explore")
+                    ExploreView(followedPublishers: $followedPublishers, followedTopics: $followedTopics, searchText: $searchText)
                 case .home:
-                    HomeView(followedPublishers: $followedPublishers, followedTopics: $followedTopics)
+                    HomeView(followedPublishers: $followedPublishers, followedTopics: $followedTopics, searchText: $searchText)
                 case .favorites:
                     FavoritesView(
                         followedPublishers: $followedPublishers,
-                        followedTopics: $followedTopics
+                        followedTopics: $followedTopics,
+                        searchText: $searchText
                     )
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            TopHeaderView(showProfile: $showProfile)
+            TopHeaderView(showProfile: $showProfile, searchText: $searchText)
 
             VStack {
                 Spacer()

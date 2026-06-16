@@ -2,7 +2,7 @@ import SwiftUI
 
 struct TopHeaderView: View {
     @Binding var showProfile: Bool
-    @State private var searchText = ""
+    @Binding var searchText: String
 
     var body: some View {
         HStack(spacing: 10) {
@@ -18,12 +18,23 @@ struct TopHeaderView: View {
                 Image(systemName: "magnifyingglass")
                     .foregroundStyle(.secondary)
                     .font(.system(size: 15))
-                TextField("Search", text: $searchText)
+                TextField("Search articles, publishers…", text: $searchText)
                     .font(.system(size: 16))
+                    .autocorrectionDisabled()
+                    .submitLabel(.search)
                 Spacer(minLength: 0)
-                Image(systemName: "mic.fill")
-                    .foregroundStyle(.secondary)
-                    .font(.system(size: 15))
+                if searchText.isEmpty {
+                    Image(systemName: "mic.fill")
+                        .foregroundStyle(.secondary)
+                        .font(.system(size: 15))
+                } else {
+                    Button { searchText = "" } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(Color(.systemGray3))
+                            .font(.system(size: 15))
+                    }
+                    .buttonStyle(.plain)
+                }
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 9)

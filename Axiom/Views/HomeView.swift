@@ -3,6 +3,7 @@ import SwiftUI
 struct HomeView: View {
     @Binding var followedPublishers: [FollowedPublisher]
     @Binding var followedTopics: [FollowedTopic]
+    @Binding var searchText: String
     @State private var activeTagFilter: String? = nil
     @State private var selectedArticle: Article? = nil
     @State private var displayCount = 20
@@ -10,8 +11,19 @@ struct HomeView: View {
     private let articles = Article.samples
 
     private var filteredArticles: [Article] {
-        guard let tag = activeTagFilter else { return articles }
-        return articles.filter { $0.tags.contains(tag) }
+        var result = articles
+        if let tag = activeTagFilter {
+            result = result.filter { $0.tags.contains(tag) }
+        }
+        if !searchText.isEmpty {
+            let q = searchText.lowercased()
+            result = result.filter {
+                $0.headline.lowercased().contains(q) ||
+                $0.publisher.lowercased().contains(q) ||
+                $0.tags.contains(where: { $0.lowercased().contains(q) })
+            }
+        }
+        return result
     }
 
     private var displayedArticles: [Article] {
@@ -42,7 +54,25 @@ struct HomeView: View {
     }
 
     var body: some View {
-        ScrollView {
+        Group {
+            if displayedArticles.isEmpty && !searchText.isEmpty {
+                VStack(spacing: 12) {
+                    Spacer()
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 48, weight: .thin))
+                        .foregroundStyle(.secondary)
+                    Text("No results for \"\(searchText)\"")
+                        .font(.title2.bold())
+                        .foregroundStyle(.secondary)
+                    Text("Try a different headline, publisher, or topic.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 40)
+                    Spacer()
+                }
+            } else {
+            ScrollView {
             LazyVStack(spacing: 12) {
                 if let tag = activeTagFilter {
                     filterBanner(for: tag)
@@ -86,6 +116,9 @@ struct HomeView: View {
             )
             .presentationDragIndicator(.visible)
         }
+        } // end else
+        }  // end Group
+        .onChange(of: searchText) { displayCount = 20 }
     }
 
     @ViewBuilder

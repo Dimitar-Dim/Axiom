@@ -13,16 +13,26 @@ struct ArticleCard: View {
     }
 
     private var cardContent: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top, spacing: 12) {
-                VStack(alignment: .leading, spacing: 6) {
-                    AsyncImage(url: URL(string: article.imageURL)) { image in
-                        image.resizable().aspectRatio(contentMode: .fill)
-                    } placeholder: {
-                        Color(.systemGray5)
-                    }
-                    .frame(width: 88, height: 88)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                AsyncImage(url: URL(string: article.imageURL)) { image in
+                    image.resizable().aspectRatio(contentMode: .fill)
+                } placeholder: {
+                    Color(.systemGray5)
+                }
+                .frame(width: 88, height: 88)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(article.headline)
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                        .lineSpacing(2)
+                        .lineLimit(3)
+                        .truncationMode(.tail)
+                        .frame(maxWidth: .infinity, alignment: .topLeading)
+
+                    Spacer(minLength: 4)
 
                     HStack(spacing: 5) {
                         let theme = PublisherTheme.of(article.publisher)
@@ -44,15 +54,11 @@ struct ArticleCard: View {
                         Text(article.publishedAt)
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .fixedSize()
                     }
                 }
-
-                Text(article.headline)
-                    .font(.headline)
-                    .fontWeight(.semibold)
-                    .lineSpacing(2)
-                    .lineLimit(4)
-                    .frame(maxWidth: .infinity, alignment: .topLeading)
+                .frame(height: 88)
             }
 
             HStack(spacing: 8) {
@@ -75,6 +81,7 @@ struct ArticleCard: View {
                                 Text(tag)
                                     .font(.caption)
                                     .fontWeight(.medium)
+                                    .lineLimit(1)
                                     .padding(.horizontal, 10)
                                     .padding(.vertical, 5)
                                     .overlay(Capsule().stroke(Color(.systemGray3), lineWidth: 1))
