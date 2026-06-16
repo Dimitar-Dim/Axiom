@@ -5,6 +5,7 @@ enum AppTab {
 }
 
 struct ContentView: View {
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @State private var selectedTab: AppTab = .home
     @State private var showProfile = false
     @State private var searchText = ""
@@ -39,6 +40,17 @@ struct ContentView: View {
             }
         }
         .ignoresSafeArea(edges: .bottom)
+        .fullScreenCover(isPresented: Binding(
+            get: { !hasCompletedOnboarding },
+            set: { _ in }
+        )) {
+            OnboardingView { selectedTags in
+                for tag in selectedTags {
+                    followedTopics.append(FollowedTopic(name: tag, tag: tag, articleCount: 0))
+                }
+                hasCompletedOnboarding = true
+            }
+        }
         .sheet(isPresented: $showProfile) {
             ProfileView(topics: $followedTopics, publishers: $followedPublishers, readHistory: $readHistory)
         }
