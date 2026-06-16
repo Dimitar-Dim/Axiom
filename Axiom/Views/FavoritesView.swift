@@ -4,18 +4,24 @@ struct FavoritesView: View {
     @Binding var followedPublishers: [FollowedPublisher]
     @Binding var followedTopics: [FollowedTopic]
     @State private var selectedArticle: Article? = nil
+    @State private var displayCount = 20
 
     private let articles = Article.samples
 
-    private var filteredArticles: [Article] {
+    private var allFilteredArticles: [Article] {
         let publisherNames = Set(followedPublishers.map(\.name))
         let topicTags = Set(followedTopics.map(\.tag))
-
         return articles.filter { article in
             publisherNames.contains(article.publisher) ||
             article.tags.contains(where: { topicTags.contains($0) })
         }
     }
+
+    private var filteredArticles: [Article] {
+        Array(allFilteredArticles.prefix(displayCount))
+    }
+
+    private var hasMore: Bool { displayCount < allFilteredArticles.count }
 
     private func isPublisherFollowed(_ publisher: String) -> Bool {
         followedPublishers.contains(where: { $0.name == publisher })
@@ -57,6 +63,11 @@ struct FavoritesView: View {
                             onSelectTag: { _ in },
                             onTap: { selectedArticle = article }
                         )
+                        .onAppear {
+                            if article.id == filteredArticles.last?.id && hasMore {
+                                displayCount += 10
+                            }
+                        }
                     }
                 }
                 .padding(.horizontal, 16)

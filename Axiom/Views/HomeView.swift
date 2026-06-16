@@ -5,13 +5,20 @@ struct HomeView: View {
     @Binding var followedTopics: [FollowedTopic]
     @State private var activeTagFilter: String? = nil
     @State private var selectedArticle: Article? = nil
+    @State private var displayCount = 20
 
     private let articles = Article.samples
 
-    private var displayedArticles: [Article] {
+    private var filteredArticles: [Article] {
         guard let tag = activeTagFilter else { return articles }
         return articles.filter { $0.tags.contains(tag) }
     }
+
+    private var displayedArticles: [Article] {
+        Array(filteredArticles.prefix(displayCount))
+    }
+
+    private var hasMore: Bool { displayCount < filteredArticles.count }
 
     private func isPublisherFollowed(_ publisher: String) -> Bool {
         followedPublishers.contains(where: { $0.name == publisher })
@@ -48,10 +55,16 @@ struct HomeView: View {
                         onSelectTag: { tag in
                             withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                                 activeTagFilter = activeTagFilter == tag ? nil : tag
+                                displayCount = 20
                             }
                         },
                         onTap: { selectedArticle = article }
                     )
+                    .onAppear {
+                        if article.id == displayedArticles.last?.id && hasMore {
+                            displayCount += 10
+                        }
+                    }
                 }
             }
             .padding(.horizontal, 16)
