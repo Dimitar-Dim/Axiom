@@ -66,7 +66,10 @@ struct ExploreView: View {
                 $0.tags.contains(where: { $0.lowercased().contains(q) })
             }
         }
-        return result.sorted { ageMinutes($0.publishedAt) < ageMinutes($1.publishedAt) }
+        return result
+            .map { ($0, ageMinutes($0.publishedAt)) }
+            .sorted { $0.1 < $1.1 }
+            .map(\.0)
     }
 
     private var displayedArticles: [Article] { Array(regionArticles.prefix(displayCount)) }
@@ -157,12 +160,14 @@ struct ExploreView: View {
                                 onSelectTag: { tag in
                                     withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                                         activeTagFilter = activeTagFilter == tag ? nil : tag
+                                        activePublisherFilter = nil
                                         displayCount = 20
                                     }
                                 },
                                 onSelectPublisher: { pub in
                                     withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                                         activePublisherFilter = activePublisherFilter == pub ? nil : pub
+                                        activeTagFilter = nil
                                         displayCount = 20
                                     }
                                 },
@@ -190,13 +195,16 @@ struct ExploreView: View {
                 onSelectTag: { tag in
                     selectedArticle = nil
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                        activeTagFilter = tag; displayCount = 20
+                        activeTagFilter = tag
+                        activePublisherFilter = nil
+                        displayCount = 20
                     }
                 },
                 onSelectPublisher: { pub in
                     selectedArticle = nil
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                         activePublisherFilter = activePublisherFilter == pub ? nil : pub
+                        activeTagFilter = nil
                         displayCount = 20
                     }
                 },
@@ -209,8 +217,8 @@ struct ExploreView: View {
         .onChange(of: selectedRegion)        { activeTagFilter = nil; activePublisherFilter = nil; displayCount = 20 }
         .task(id: selectedRegion)            { await onRegionChange(selectedRegion) }
         .onChange(of: searchText)            { displayCount = 20 }
-        .onChange(of: activeTagFilter)       { if let tag = $1 { activePublisherFilter = nil; profile.record(.tagFiltered(tag: tag)) } }
-        .onChange(of: activePublisherFilter) { if let pub = $1 { activeTagFilter = nil; profile.record(.publisherFiltered(name: pub)) } }
+        .onChange(of: activeTagFilter)       { if let tag = $1 { profile.record(.tagFiltered(tag: tag)) } }
+        .onChange(of: activePublisherFilter) { if let pub = $1 { profile.record(.publisherFiltered(name: pub)) } }
     }
 
     // MARK: – Banners

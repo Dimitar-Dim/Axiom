@@ -69,9 +69,14 @@ enum NewsService {
             + [URLQueryItem(name: "apiKey", value: Secrets.newsAPIKey)]
 
         guard let url = comps.url else { throw URLError(.badURL) }
-        let (data, _) = try await URLSession.shared.data(from: url)
-        let raw = try JSONDecoder().decode(RawResponse.self, from: data)
-        let result = (raw.articles ?? []).compactMap { Article(rawItem: $0, location: location) }
+
+        // Network request + JSON decoding run off the main actor so the UI never blocks
+        let result = try await Task.detached(priority: .userInitiated) {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            let raw = try JSONDecoder().decode(RawResponse.self, from: data)
+            return (raw.articles ?? []).compactMap { Article(rawItem: $0, location: location) }
+        }.value
+
         cache[key] = result
         return result
     }

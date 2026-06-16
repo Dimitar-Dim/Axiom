@@ -15,8 +15,19 @@ struct HomeView: View {
     @State private var rankedFeed: [Article] = []
 
     private func refreshFeed() {
-        rankedFeed = RecommendationEngine.rank(articles: articles, profile: profile, readHistory: readHistory)
+        let snapshotArticles = articles
+        let tagWeights = profile.tagWeights
+        let publisherWeights = profile.publisherWeights
+        let snapshotReadHistory = readHistory
         displayCount = 20
+        Task {
+            rankedFeed = await RecommendationEngine.shared.rank(
+                articles: snapshotArticles,
+                tagWeights: tagWeights,
+                publisherWeights: publisherWeights,
+                readHistory: snapshotReadHistory
+            )
+        }
     }
 
     private var filteredArticles: [Article] {
@@ -111,12 +122,14 @@ struct HomeView: View {
                         onSelectTag: { tag in
                             withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                                 activeTagFilter = activeTagFilter == tag ? nil : tag
+                                activePublisherFilter = nil
                                 displayCount = 20
                             }
                         },
                         onSelectPublisher: { publisher in
                             withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                                 activePublisherFilter = activePublisherFilter == publisher ? nil : publisher
+                                activeTagFilter = nil
                                 displayCount = 20
                             }
                         },
@@ -145,6 +158,7 @@ struct HomeView: View {
                     selectedArticle = nil
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                         activeTagFilter = tag
+                        activePublisherFilter = nil
                         displayCount = 20
                     }
                 },
@@ -152,6 +166,7 @@ struct HomeView: View {
                     selectedArticle = nil
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                         activePublisherFilter = activePublisherFilter == publisher ? nil : publisher
+                        activeTagFilter = nil
                         displayCount = 20
                     }
                 },
@@ -166,8 +181,8 @@ struct HomeView: View {
         .onAppear { if rankedFeed.isEmpty { refreshFeed() } }
         .onChange(of: articles) { refreshFeed() }
         .onChange(of: searchText) { displayCount = 20 }
-        .onChange(of: activeTagFilter) { if let tag = $1 { activePublisherFilter = nil; profile.record(.tagFiltered(tag: tag)) } }
-        .onChange(of: activePublisherFilter) { if let pub = $1 { activeTagFilter = nil; profile.record(.publisherFiltered(name: pub)) } }
+        .onChange(of: activeTagFilter) { if let tag = $1 { profile.record(.tagFiltered(tag: tag)) } }
+        .onChange(of: activePublisherFilter) { if let pub = $1 { profile.record(.publisherFiltered(name: pub)) } }
     }
 
     @ViewBuilder

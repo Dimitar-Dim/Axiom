@@ -1,7 +1,7 @@
 import Foundation
 
 struct Article: Identifiable, Equatable {
-    let id = UUID()
+    let id: UUID
     let headline: String
     let publisher: String
     let tags: [String]
@@ -11,7 +11,11 @@ struct Article: Identifiable, Equatable {
     let location: String?
     let url: String?
 
-    init(headline: String, publisher: String, tags: [String], publishedAt: String, body: String, imageURL: String, location: String? = nil, url: String? = nil) {
+    // `id` defaults to a fresh UUID for genuinely new articles, but callers that are
+    // re-deriving an existing article (e.g. after AI re-tagging) must pass the original
+    // id through — otherwise SwiftUI list diffing and per-id caches silently break.
+    init(id: UUID = UUID(), headline: String, publisher: String, tags: [String], publishedAt: String, body: String, imageURL: String, location: String? = nil, url: String? = nil) {
+        self.id = id
         self.headline = headline
         self.publisher = publisher
         self.tags = tags

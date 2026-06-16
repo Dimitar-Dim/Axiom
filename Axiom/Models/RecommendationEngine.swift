@@ -4,28 +4,34 @@ import NaturalLanguage
 /// Ranks articles using a multi-signal scoring model.
 ///
 /// Score components (in priority order):
-///  1. Tag interest weights        — sum of profile.tagWeights for each article tag
-///  2. Publisher interest weight   — profile.publisherWeights[publisher]
+///  1. Tag interest weights        — sum of tagWeights for each article tag
+///  2. Publisher interest weight   — publisherWeights[publisher]
 ///  3. Semantic NL similarity      — cosine similarity between article headline
 ///                                   and the user's recent-read context (NLEmbedding)
 ///  4. Recency bonus               — linear decay, full at 0h, zero at 24h
 ///  5. Already-read penalty        — score × 0.2 if article is in read history
 ///
-/// The NaturalLanguage embedding is loaded once and document vectors are cached
-/// so repeated rankings are fast even on older hardware.
-enum RecommendationEngine {
+/// An actor so the NLEmbedding lookups (loading the model, computing per-headline
+/// vectors) always run off the main actor and the vector cache stays race-free
+/// without manual locking.
+actor RecommendationEngine {
+
+    static let shared = RecommendationEngine()
 
     // Cached word embedding loaded once per app session
-    private static let embedding: NLEmbedding? = NLEmbedding.wordEmbedding(for: .english)
+    private let embedding: NLEmbedding? = NLEmbedding.wordEmbedding(for: .english)
 
     // Document vector cache keyed by article UUID to avoid re-computing
-    private static var vectorCache: [UUID: [Double]] = [:]
+    private var vectorCache: [UUID: [Double]] = [:]
+
+    private init() {}
 
     // MARK: – Public
 
-    static func rank(
+    func rank(
         articles: [Article],
-        profile: UserInterestProfile,
+        tagWeights: [String: Double],
+        publisherWeights: [String: Double],
         readHistory: [Article]
     ) -> [Article] {
         let readIds = Set(readHistory.map(\.id))
@@ -38,7 +44,7 @@ enum RecommendationEngine {
 
         return articles
             .map { article -> (Article, Double) in
-                (article, score(article, profile: profile, readIds: readIds, contextVector: contextVector))
+                (article, score(article, tagWeights: tagWeights, publisherWeights: publisherWeights, readIds: readIds, contextVector: contextVector))
             }
             .sorted { $0.1 > $1.1 }
             .map(\.0)
@@ -46,9 +52,10 @@ enum RecommendationEngine {
 
     // MARK: – Scoring
 
-    private static func score(
+    private func score(
         _ article: Article,
-        profile: UserInterestProfile,
+        tagWeights: [String: Double],
+        publisherWeights: [String: Double],
         readIds: Set<UUID>,
         contextVector: [Double]
     ) -> Double {
@@ -56,11 +63,11 @@ enum RecommendationEngine {
 
         // 1. Tag interest
         for tag in article.tags {
-            s += (profile.tagWeights[tag] ?? 0) * 1.0
+            s += (tagWeights[tag] ?? 0) * 1.0
         }
 
         // 2. Publisher interest
-        s += (profile.publisherWeights[article.publisher] ?? 0) * 0.8
+        s += (publisherWeights[article.publisher] ?? 0) * 0.8
 
         // 3. Semantic similarity to recent reads
         if !contextVector.isEmpty {
@@ -79,7 +86,7 @@ enum RecommendationEngine {
 
     // MARK: – Recency
 
-    private static func recencyBonus(_ publishedAt: String) -> Double {
+    private func recencyBonus(_ publishedAt: String) -> Double {
         if let r = publishedAt.range(of: #"\d+(?=h)"#, options: .regularExpression),
            let h = Double(publishedAt[r]) {
             return max(0, 1.0 - h / 24.0)  // full bonus <1h, zero at 24h
@@ -94,7 +101,7 @@ enum RecommendationEngine {
     // MARK: – NLEmbedding helpers
 
     /// Returns average word vector for a text string, with optional UUID cache key.
-    private static func documentVector(for text: String, cacheKey: UUID? = nil) -> [Double] {
+    private func documentVector(for text: String, cacheKey: UUID? = nil) -> [Double] {
         if let key = cacheKey, let cached = vectorCache[key] { return cached }
 
         guard let emb = embedding else { return [] }
@@ -124,7 +131,7 @@ enum RecommendationEngine {
     }
 
     /// Cosine similarity in [-1, 1]. Returns 0 if either vector is empty or zero-magnitude.
-    private static func cosineSimilarity(_ a: [Double], _ b: [Double]) -> Double {
+    private func cosineSimilarity(_ a: [Double], _ b: [Double]) -> Double {
         guard a.count == b.count, !a.isEmpty else { return 0 }
         let dot  = zip(a, b).reduce(0.0) { $0 + $1.0 * $1.1 }
         let magA = sqrt(a.reduce(0.0) { $0 + $1 * $1 })

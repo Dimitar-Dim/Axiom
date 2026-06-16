@@ -13,14 +13,13 @@ struct ContentView: View {
     @State private var followedTopics: [FollowedTopic] = ContentView.loadFollowedTopics()
     @State private var followedPublishers: [FollowedPublisher] = ContentView.loadFollowedPublishers()
     @State private var readHistory: [Article] = ContentView.loadReadHistory()
-    // Pool: starts with hardcoded samples, live articles are merged in as they arrive
+    // NewsAPI is detached — pool is permanently the hardcoded local sample set.
     @State private var articles: [Article] = Article.samples
-    @State private var searchFetchTask: Task<Void, Never>? = nil
 
     @ViewBuilder private var exploreTab: some View {
         ExploreView(
             articles: articles,
-            onRegionChange: { region in await fetchForRegion(region) },
+            onRegionChange: { _ in },
             followedPublishers: $followedPublishers,
             followedTopics: $followedTopics,
             searchText: $searchText,
@@ -31,7 +30,7 @@ struct ContentView: View {
     @ViewBuilder private var homeTab: some View {
         HomeView(
             articles: articles,
-            onRefresh: { await fetchTopHeadlines() },
+            onRefresh: { },
             followedPublishers: $followedPublishers,
             followedTopics: $followedTopics,
             searchText: $searchText,
@@ -42,7 +41,7 @@ struct ContentView: View {
     @ViewBuilder private var favoritesTab: some View {
         FavoritesView(
             articles: articles,
-            onEnsureArticles: { await fetchForFollows() },
+            onEnsureArticles: { },
             followedPublishers: $followedPublishers,
             followedTopics: $followedTopics,
             searchText: $searchText,
@@ -71,18 +70,8 @@ struct ContentView: View {
                 BottomTabBar(selectedTab: $selectedTab)
             }
         }
-        .task { await fetchTopHeadlines() }
         .ignoresSafeArea(edges: .bottom)
         .environmentObject(profile)
-        .onChange(of: searchText) { _, query in
-            searchFetchTask?.cancel()
-            guard query.count >= 3 else { return }
-            searchFetchTask = Task {
-                try? await Task.sleep(for: .milliseconds(600))
-                guard !Task.isCancelled else { return }
-                await fetchForSearch(query)
-            }
-        }
         .onChange(of: followedTopics)     { _, new in Self.persist(new, key: "axiom_followedTopics") }
         .onChange(of: followedPublishers) { _, new in Self.persist(new, key: "axiom_followedPublishers") }
         .onChange(of: readHistory)        { _, new in Self.persistReadHistory(new) }
@@ -102,45 +91,6 @@ struct ContentView: View {
             ProfileView(topics: $followedTopics, publishers: $followedPublishers, readHistory: $readHistory)
                 .environmentObject(profile)
         }
-    }
-
-    // MARK: – Fetch
-
-    @MainActor
-    private func fetchTopHeadlines() async {
-        do {
-            let fetched = try await NewsService.topHeadlines()
-            articles = await StoryProcessor.process(incoming: fetched, pool: articles)
-        } catch { print("topHeadlines error: \(error)") }
-    }
-
-    @MainActor
-    private func fetchForRegion(_ region: Region) async {
-        guard let code = region.newsAPICountryCode else { return }
-        do {
-            let fetched = try await NewsService.forCountry(code, locationName: region.rawValue)
-            articles = await StoryProcessor.process(incoming: fetched, pool: articles)
-        } catch { print("region fetch error: \(error)") }
-    }
-
-    @MainActor
-    private func fetchForSearch(_ query: String) async {
-        do {
-            let fetched = try await NewsService.forQuery(query)
-            articles = await StoryProcessor.process(incoming: fetched, pool: articles)
-        } catch { print("search fetch error: \(error)") }
-    }
-
-    @MainActor
-    private func fetchForFollows() async {
-        let terms = (followedTopics.map(\.tag) + followedPublishers.map(\.name))
-            .prefix(5)
-            .joined(separator: " OR ")
-        guard !terms.isEmpty else { return }
-        do {
-            let fetched = try await NewsService.forQuery(terms)
-            articles = await StoryProcessor.process(incoming: fetched, pool: articles)
-        } catch { print("follows fetch error: \(error)") }
     }
 
     // MARK: – Persistence

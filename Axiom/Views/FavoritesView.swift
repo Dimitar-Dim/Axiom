@@ -125,12 +125,14 @@ struct FavoritesView: View {
                                 onSelectTag: { tag in
                                     withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                                         activeTagFilter = activeTagFilter == tag ? nil : tag
+                                        activePublisherFilter = nil
                                         displayCount = 20
                                     }
                                 },
                                 onSelectPublisher: { pub in
                                     withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                                         activePublisherFilter = activePublisherFilter == pub ? nil : pub
+                                        activeTagFilter = nil
                                         displayCount = 20
                                     }
                                 },
@@ -157,13 +159,16 @@ struct FavoritesView: View {
                 onSelectTag: { tag in
                     selectedArticle = nil
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                        activeTagFilter = tag; displayCount = 20
+                        activeTagFilter = tag
+                        activePublisherFilter = nil
+                        displayCount = 20
                     }
                 },
                 onSelectPublisher: { pub in
                     selectedArticle = nil
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                         activePublisherFilter = activePublisherFilter == pub ? nil : pub
+                        activeTagFilter = nil
                         displayCount = 20
                     }
                 },
@@ -175,8 +180,8 @@ struct FavoritesView: View {
         }
         .task                                { await onEnsureArticles() }
         .onChange(of: searchText)            { displayCount = 20 }
-        .onChange(of: activeTagFilter)       { if let tag = $1 { activePublisherFilter = nil; profile.record(.tagFiltered(tag: tag)) } }
-        .onChange(of: activePublisherFilter) { if let pub = $1 { activeTagFilter = nil; profile.record(.publisherFiltered(name: pub)) } }
+        .onChange(of: activeTagFilter)       { if let tag = $1 { profile.record(.tagFiltered(tag: tag)) } }
+        .onChange(of: activePublisherFilter) { if let pub = $1 { profile.record(.publisherFiltered(name: pub)) } }
     }
 
     // MARK: – Banners
