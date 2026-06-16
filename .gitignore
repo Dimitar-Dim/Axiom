@@ -31,4 +31,7 @@ fastlane/test_output
 .env
 *.env.local
 
+# API keys — never commit
+Axiom/Secrets.swift
+
 .fake
