@@ -129,6 +129,7 @@ struct HomeView: View {
             .padding(.top, 8)
             .padding(.bottom, 110)
         }
+        .scrollDismissesKeyboard(.immediately)
         .safeAreaInset(edge: .top) { Color.clear.frame(height: 114) }
         .sheet(item: $selectedArticle) { article in
             ArticleDetailView(

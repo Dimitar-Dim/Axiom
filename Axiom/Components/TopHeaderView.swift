@@ -22,6 +22,7 @@ struct TopHeaderView: View {
                     .font(.system(size: 16))
                     .autocorrectionDisabled()
                     .submitLabel(.search)
+                    .onSubmit { UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil) }
                 Spacer(minLength: 0)
                 if !searchText.isEmpty {
                     Button { searchText = "" } label: {
