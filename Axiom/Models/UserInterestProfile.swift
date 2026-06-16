@@ -17,6 +17,12 @@ final class UserInterestProfile: ObservableObject {
 
     // MARK: – Public API
 
+    func reset() {
+        tagWeights = [:]
+        publisherWeights = [:]
+        persist()
+    }
+
     func record(_ event: EngagementEvent) {
         switch event {
 

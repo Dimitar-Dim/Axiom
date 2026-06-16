@@ -76,13 +76,13 @@ struct ExploreView: View {
             followedPublishers.remove(at: i)
             profile.record(.publisherUnfollowed(name: publisher))
         } else {
-            followedPublishers.append(FollowedPublisher(name: publisher, articleCount: 0))
+            followedPublishers.append(FollowedPublisher(name: publisher, articleCount: Article.articleCount(forPublisher: publisher)))
             profile.record(.publisherFollowed(name: publisher))
         }
     }
     private func followTopic(_ tag: String) {
         guard !isTopicFollowed(tag) else { return }
-        followedTopics.append(FollowedTopic(name: tag, tag: tag, articleCount: 0))
+        followedTopics.append(FollowedTopic(name: tag, tag: tag, articleCount: Article.articleCount(forTag: tag)))
         profile.record(.topicFollowed(tag: tag))
     }
 

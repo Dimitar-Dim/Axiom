@@ -24,6 +24,14 @@ struct Article: Identifiable, Equatable {
 extension Article {
     static let samples: [Article] = global + netherlands + uk + usa + germany + france + geopolitics + india + china + brazil + japan + australia
 
+    static func articleCount(forTag tag: String) -> Int {
+        samples.filter { $0.tags.contains(tag) }.count
+    }
+
+    static func articleCount(forPublisher publisher: String) -> Int {
+        samples.filter { $0.publisher == publisher }.count
+    }
+
     // MARK: – Global / No Location
     static let global: [Article] = [
         Article(

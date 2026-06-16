@@ -51,7 +51,7 @@ struct ContentView: View {
         )) {
             OnboardingView { selectedTags in
                 for tag in selectedTags {
-                    followedTopics.append(FollowedTopic(name: tag, tag: tag, articleCount: 0))
+                    followedTopics.append(FollowedTopic(name: tag, tag: tag, articleCount: Article.articleCount(forTag: tag)))
                 }
                 profile.record(.onboardingSelected(tags: selectedTags))
                 hasCompletedOnboarding = true

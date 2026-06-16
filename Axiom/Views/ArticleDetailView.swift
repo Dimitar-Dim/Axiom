@@ -107,6 +107,18 @@ struct ArticleDetailView: View {
             .padding(.leading, 16)
             .padding(.top, 56)
         }
+        .overlay(alignment: .topTrailing) {
+            ShareLink(item: article.headline) {
+                Image(systemName: "square.and.arrow.up")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(.primary)
+                    .padding(10)
+                    .background(.ultraThinMaterial, in: Circle())
+            }
+            .buttonStyle(.plain)
+            .padding(.trailing, 16)
+            .padding(.top, 56)
+        }
         .presentationDragIndicator(.visible)
     }
 

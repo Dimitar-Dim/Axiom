@@ -15,6 +15,7 @@ struct ProfileView: View {
     @State private var publishersExpanded = false
     @State private var historyExpanded = false
     @State private var selectedArticle: Article? = nil
+    @State private var showPreferences = false
     @State private var searchText = ""
 
     private var searchResults: [SearchResult] {
@@ -153,7 +154,10 @@ struct ProfileView: View {
                         historySection
 
                         VStack(spacing: 0) {
-                            navRow(icon: "slider.horizontal.3", label: "Preferences")
+                            Button { showPreferences = true } label: {
+                                navRow(icon: "slider.horizontal.3", label: "Preferences")
+                            }
+                            .buttonStyle(.plain)
                         }
                         .background(Color(.systemBackground))
                         .clipShape(RoundedRectangle(cornerRadius: 16))
@@ -174,7 +178,7 @@ struct ProfileView: View {
                         publishers.remove(at: i)
                         profile.record(.publisherUnfollowed(name: article.publisher))
                     } else {
-                        publishers.append(FollowedPublisher(name: article.publisher, articleCount: 0))
+                        publishers.append(FollowedPublisher(name: article.publisher, articleCount: Article.articleCount(forPublisher: article.publisher)))
                         profile.record(.publisherFollowed(name: article.publisher))
                     }
                 },
@@ -184,6 +188,10 @@ struct ProfileView: View {
                 }
             )
             .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showPreferences) {
+            PreferencesView()
+                .environmentObject(profile)
         }
     }
 
