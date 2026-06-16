@@ -9,8 +9,11 @@ private struct SearchResult: Identifiable {
 struct ProfileView: View {
     @Binding var topics: [FollowedTopic]
     @Binding var publishers: [FollowedPublisher]
+    @Binding var readHistory: [Article]
     @State private var topicsExpanded = false
     @State private var publishersExpanded = false
+    @State private var historyExpanded = false
+    @State private var selectedArticle: Article? = nil
     @State private var searchText = ""
 
     private var searchResults: [SearchResult] {
@@ -138,10 +141,10 @@ struct ProfileView: View {
                             .padding(.top, 40)
                         }
 
+                        historySection
+
                         VStack(spacing: 0) {
                             navRow(icon: "slider.horizontal.3", label: "Preferences")
-                            Divider().padding(.horizontal, 16)
-                            navRow(icon: "clock", label: "History")
                         }
                         .background(Color(.systemBackground))
                         .clipShape(RoundedRectangle(cornerRadius: 16))
@@ -153,6 +156,69 @@ struct ProfileView: View {
                 .padding(.bottom, 40)
             }
         }
+        .sheet(item: $selectedArticle) { article in
+            ArticleDetailView(
+                article: article,
+                isPublisherFollowed: publishers.contains(where: { $0.name == article.publisher }),
+                onTogglePublisher: {
+                    if let i = publishers.firstIndex(where: { $0.name == article.publisher }) {
+                        publishers.remove(at: i)
+                    } else {
+                        publishers.append(FollowedPublisher(name: article.publisher, articleCount: 0))
+                    }
+                },
+                onSelectTag: { _ in }
+            )
+            .presentationDragIndicator(.visible)
+        }
+    }
+
+    @ViewBuilder
+    private var historySection: some View {
+        VStack(spacing: 0) {
+            Button {
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                    historyExpanded.toggle()
+                }
+            } label: {
+                HStack {
+                    Text("History")
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                    Spacer()
+                    if !readHistory.isEmpty {
+                        Text("\(readHistory.count)")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .padding(.trailing, 4)
+                    }
+                    Image(systemName: readHistory.isEmpty ? "clock" : "chevron.down")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.secondary)
+                        .rotationEffect(.degrees(historyExpanded ? 0 : -90))
+                        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: historyExpanded)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+            }
+            .buttonStyle(.plain)
+            .disabled(readHistory.isEmpty)
+
+            if historyExpanded && !readHistory.isEmpty {
+                Divider().padding(.horizontal, 16)
+                ForEach(readHistory) { article in
+                    HistoryRow(article: article) {
+                        selectedArticle = article
+                    }
+                    if article.id != readHistory.last?.id {
+                        Divider().padding(.horizontal, 16)
+                    }
+                }
+            }
+        }
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: .black.opacity(0.07), radius: 10, x: 0, y: 3)
     }
 
     private func navRow(icon: String, label: String) -> some View {
@@ -239,6 +305,41 @@ struct TopicRow: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
+    }
+}
+
+private struct HistoryRow: View {
+    let article: Article
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 12) {
+                let theme = PublisherTheme.of(article.publisher)
+                ZStack {
+                    Circle().fill(theme.color).frame(width: 34, height: 34)
+                    Text(theme.initials)
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(.white)
+                }
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(article.headline)
+                        .font(.subheadline.weight(.medium))
+                        .lineLimit(2)
+                        .foregroundStyle(.primary)
+                    Text(article.publisher + " · " + article.publishedAt)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+        }
+        .buttonStyle(.plain)
     }
 }
 

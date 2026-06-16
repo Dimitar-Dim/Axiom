@@ -23,11 +23,7 @@ struct TopHeaderView: View {
                     .autocorrectionDisabled()
                     .submitLabel(.search)
                 Spacer(minLength: 0)
-                if searchText.isEmpty {
-                    Image(systemName: "mic.fill")
-                        .foregroundStyle(.secondary)
-                        .font(.system(size: 15))
-                } else {
+                if !searchText.isEmpty {
                     Button { searchText = "" } label: {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundStyle(Color(.systemGray3))

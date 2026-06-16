@@ -18,6 +18,7 @@ struct ExploreView: View {
     @Binding var followedPublishers: [FollowedPublisher]
     @Binding var followedTopics: [FollowedTopic]
     @Binding var searchText: String
+    @Binding var readHistory: [Article]
 
     @State private var selectedRegion: Region = .netherlands
     @State private var showRegionPicker = false
@@ -55,6 +56,11 @@ struct ExploreView: View {
 
     private func isPublisherFollowed(_ publisher: String) -> Bool {
         followedPublishers.contains(where: { $0.name == publisher })
+    }
+
+    private func recordRead(_ article: Article) {
+        readHistory.removeAll { $0.id == article.id }
+        readHistory.insert(article, at: 0)
     }
 
     private func togglePublisher(_ publisher: String) {
@@ -100,7 +106,7 @@ struct ExploreView: View {
                                 isPublisherFollowed: isPublisherFollowed(article.publisher),
                                 onTogglePublisher: { togglePublisher(article.publisher) },
                                 onSelectTag: { _ in },
-                                onTap: { selectedArticle = article }
+                                onTap: { recordRead(article); selectedArticle = article }
                             )
                             .onAppear {
                                 if article.id == displayedArticles.last?.id && hasMore {

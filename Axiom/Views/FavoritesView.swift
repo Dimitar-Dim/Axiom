@@ -4,6 +4,7 @@ struct FavoritesView: View {
     @Binding var followedPublishers: [FollowedPublisher]
     @Binding var followedTopics: [FollowedTopic]
     @Binding var searchText: String
+    @Binding var readHistory: [Article]
     @State private var selectedArticle: Article? = nil
     @State private var displayCount = 20
 
@@ -35,6 +36,11 @@ struct FavoritesView: View {
 
     private func isPublisherFollowed(_ publisher: String) -> Bool {
         followedPublishers.contains(where: { $0.name == publisher })
+    }
+
+    private func recordRead(_ article: Article) {
+        readHistory.removeAll { $0.id == article.id }
+        readHistory.insert(article, at: 0)
     }
 
     private func togglePublisher(_ publisher: String) {
@@ -90,7 +96,7 @@ struct FavoritesView: View {
                                 isPublisherFollowed: isPublisherFollowed(article.publisher),
                                 onTogglePublisher: { togglePublisher(article.publisher) },
                                 onSelectTag: { _ in },
-                                onTap: { selectedArticle = article }
+                                onTap: { recordRead(article); selectedArticle = article }
                             )
                             .onAppear {
                                 if article.id == filteredArticles.last?.id && hasMore {

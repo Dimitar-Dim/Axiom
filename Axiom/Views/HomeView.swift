@@ -4,6 +4,7 @@ struct HomeView: View {
     @Binding var followedPublishers: [FollowedPublisher]
     @Binding var followedTopics: [FollowedTopic]
     @Binding var searchText: String
+    @Binding var readHistory: [Article]
     @State private var activeTagFilter: String? = nil
     @State private var selectedArticle: Article? = nil
     @State private var displayCount = 20
@@ -48,6 +49,11 @@ struct HomeView: View {
         }
     }
 
+    private func recordRead(_ article: Article) {
+        readHistory.removeAll { $0.id == article.id }
+        readHistory.insert(article, at: 0)
+    }
+
     private func followTopic(_ tag: String) {
         guard !isTopicFollowed(tag) else { return }
         followedTopics.append(FollowedTopic(name: tag, tag: tag, articleCount: 0))
@@ -88,7 +94,7 @@ struct HomeView: View {
                                 displayCount = 20
                             }
                         },
-                        onTap: { selectedArticle = article }
+                        onTap: { recordRead(article); selectedArticle = article }
                     )
                     .onAppear {
                         if article.id == displayedArticles.last?.id && hasMore {
