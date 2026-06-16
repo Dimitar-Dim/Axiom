@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct FavoritesView: View {
+    let articles: [Article]
+    let onEnsureArticles: () async -> Void
     @Binding var followedPublishers: [FollowedPublisher]
     @Binding var followedTopics: [FollowedTopic]
     @Binding var searchText: String
@@ -11,8 +13,6 @@ struct FavoritesView: View {
     @State private var displayCount = 20
     @State private var activeTagFilter: String? = nil
     @State private var activePublisherFilter: String? = nil
-
-    private let articles = Article.samples
 
     private var followedArticles: [Article] {
         let publisherNames = Set(followedPublishers.map(\.name))
@@ -62,13 +62,15 @@ struct FavoritesView: View {
             followedPublishers.remove(at: i)
             profile.record(.publisherUnfollowed(name: publisher))
         } else {
-            followedPublishers.append(FollowedPublisher(name: publisher, articleCount: Article.articleCount(forPublisher: publisher)))
+            let count = articles.filter { $0.publisher == publisher }.count
+            followedPublishers.append(FollowedPublisher(name: publisher, articleCount: count))
             profile.record(.publisherFollowed(name: publisher))
         }
     }
     private func followTopic(_ tag: String) {
         guard !isTopicFollowed(tag) else { return }
-        followedTopics.append(FollowedTopic(name: tag, tag: tag, articleCount: Article.articleCount(forTag: tag)))
+        let count = articles.filter { $0.tags.contains(tag) }.count
+        followedTopics.append(FollowedTopic(name: tag, tag: tag, articleCount: count))
         profile.record(.topicFollowed(tag: tag))
     }
 
@@ -171,6 +173,7 @@ struct FavoritesView: View {
             )
             .presentationDragIndicator(.visible)
         }
+        .task                                { await onEnsureArticles() }
         .onChange(of: searchText)            { displayCount = 20 }
         .onChange(of: activeTagFilter)       { if let tag = $1 { activePublisherFilter = nil; profile.record(.tagFiltered(tag: tag)) } }
         .onChange(of: activePublisherFilter) { if let pub = $1 { activeTagFilter = nil; profile.record(.publisherFiltered(name: pub)) } }

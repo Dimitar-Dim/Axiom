@@ -14,7 +14,27 @@ enum Region: String, CaseIterable {
     case australia   = "Australia"
 }
 
+extension Region {
+    var newsAPICountryCode: String? {
+        switch self {
+        case .netherlands: return "nl"
+        case .uk:          return "gb"
+        case .usa:         return "us"
+        case .germany:     return "de"
+        case .france:      return "fr"
+        case .ukraine:     return "ua"
+        case .india:       return "in"
+        case .china:       return "cn"
+        case .brazil:      return "br"
+        case .japan:       return "jp"
+        case .australia:   return "au"
+        }
+    }
+}
+
 struct ExploreView: View {
+    let articles: [Article]
+    let onRegionChange: (Region) async -> Void
     @Binding var followedPublishers: [FollowedPublisher]
     @Binding var followedTopics: [FollowedTopic]
     @Binding var searchText: String
@@ -28,10 +48,8 @@ struct ExploreView: View {
     @State private var activeTagFilter: String? = nil
     @State private var activePublisherFilter: String? = nil
 
-    private let allArticles = Article.samples
-
     private var regionArticles: [Article] {
-        var result = allArticles.filter {
+        var result = articles.filter {
             $0.location?.contains(selectedRegion.rawValue) == true
         }
         if let tag = activeTagFilter {
@@ -76,13 +94,15 @@ struct ExploreView: View {
             followedPublishers.remove(at: i)
             profile.record(.publisherUnfollowed(name: publisher))
         } else {
-            followedPublishers.append(FollowedPublisher(name: publisher, articleCount: Article.articleCount(forPublisher: publisher)))
+            let count = articles.filter { $0.publisher == publisher }.count
+            followedPublishers.append(FollowedPublisher(name: publisher, articleCount: count))
             profile.record(.publisherFollowed(name: publisher))
         }
     }
     private func followTopic(_ tag: String) {
         guard !isTopicFollowed(tag) else { return }
-        followedTopics.append(FollowedTopic(name: tag, tag: tag, articleCount: Article.articleCount(forTag: tag)))
+        let count = articles.filter { $0.tags.contains(tag) }.count
+        followedTopics.append(FollowedTopic(name: tag, tag: tag, articleCount: count))
         profile.record(.topicFollowed(tag: tag))
     }
 
@@ -187,6 +207,7 @@ struct ExploreView: View {
             .presentationDragIndicator(.visible)
         }
         .onChange(of: selectedRegion)        { activeTagFilter = nil; activePublisherFilter = nil; displayCount = 20 }
+        .task(id: selectedRegion)            { await onRegionChange(selectedRegion) }
         .onChange(of: searchText)            { displayCount = 20 }
         .onChange(of: activeTagFilter)       { if let tag = $1 { activePublisherFilter = nil; profile.record(.tagFiltered(tag: tag)) } }
         .onChange(of: activePublisherFilter) { if let pub = $1 { activeTagFilter = nil; profile.record(.publisherFiltered(name: pub)) } }

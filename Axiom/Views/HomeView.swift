@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct HomeView: View {
+    let articles: [Article]
+    let onRefresh: () async -> Void
     @Binding var followedPublishers: [FollowedPublisher]
     @Binding var followedTopics: [FollowedTopic]
     @Binding var searchText: String
@@ -11,8 +13,6 @@ struct HomeView: View {
     @State private var selectedArticle: Article? = nil
     @State private var displayCount = 20
     @State private var rankedFeed: [Article] = []
-
-    private let articles = Article.samples
 
     private func refreshFeed() {
         rankedFeed = RecommendationEngine.rank(articles: articles, profile: profile, readHistory: readHistory)
@@ -57,7 +57,8 @@ struct HomeView: View {
             followedPublishers.remove(at: index)
             profile.record(.publisherUnfollowed(name: publisher))
         } else {
-            followedPublishers.append(FollowedPublisher(name: publisher, articleCount: Article.articleCount(forPublisher: publisher)))
+            let count = articles.filter { $0.publisher == publisher }.count
+            followedPublishers.append(FollowedPublisher(name: publisher, articleCount: count))
             profile.record(.publisherFollowed(name: publisher))
         }
     }
@@ -70,7 +71,8 @@ struct HomeView: View {
 
     private func followTopic(_ tag: String) {
         guard !isTopicFollowed(tag) else { return }
-        followedTopics.append(FollowedTopic(name: tag, tag: tag, articleCount: Article.articleCount(forTag: tag)))
+        let count = articles.filter { $0.tags.contains(tag) }.count
+        followedTopics.append(FollowedTopic(name: tag, tag: tag, articleCount: count))
         profile.record(.topicFollowed(tag: tag))
     }
 
@@ -131,7 +133,7 @@ struct HomeView: View {
             .padding(.top, 8)
             .padding(.bottom, 110)
         }
-        .refreshable { refreshFeed() }
+        .refreshable { await onRefresh(); refreshFeed() }
         .scrollDismissesKeyboard(.immediately)
         .safeAreaInset(edge: .top) { Color.clear.frame(height: 114) }
         .sheet(item: $selectedArticle) { article in
@@ -162,6 +164,7 @@ struct HomeView: View {
         } // end else
         }  // end Group
         .onAppear { if rankedFeed.isEmpty { refreshFeed() } }
+        .onChange(of: articles) { refreshFeed() }
         .onChange(of: searchText) { displayCount = 20 }
         .onChange(of: activeTagFilter) { if let tag = $1 { activePublisherFilter = nil; profile.record(.tagFiltered(tag: tag)) } }
         .onChange(of: activePublisherFilter) { if let pub = $1 { activeTagFilter = nil; profile.record(.publisherFiltered(name: pub)) } }

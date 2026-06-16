@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		A409C01D2FE103F200F93CF8 /* FoundationModels.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A409C01C2FE103F200F93CF8 /* FoundationModels.framework */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		A4950F5A2FC83EB6004BD913 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -24,6 +28,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		A409C01C2FE103F200F93CF8 /* FoundationModels.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = FoundationModels.framework; path = System/Library/Frameworks/FoundationModels.framework; sourceTree = SDKROOT; };
 		A4950F4A2FC83EB4004BD913 /* Axiom.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Axiom.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A4950F592FC83EB6004BD913 /* AxiomTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AxiomTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A4950F632FC83EB6004BD913 /* AxiomUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AxiomUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -52,6 +57,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A409C01D2FE103F200F93CF8 /* FoundationModels.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -72,12 +78,21 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		A409C01B2FE103F200F93CF8 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				A409C01C2FE103F200F93CF8 /* FoundationModels.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		A4950F412FC83EB4004BD913 = {
 			isa = PBXGroup;
 			children = (
 				A4950F4C2FC83EB4004BD913 /* Axiom */,
 				A4950F5C2FC83EB6004BD913 /* AxiomTests */,
 				A4950F662FC83EB6004BD913 /* AxiomUITests */,
+				A409C01B2FE103F200F93CF8 /* Frameworks */,
 				A4950F4B2FC83EB4004BD913 /* Products */,
 			);
 			sourceTree = "<group>";

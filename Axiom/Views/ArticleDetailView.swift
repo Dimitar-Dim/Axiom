@@ -18,6 +18,7 @@ struct ArticleDetailView: View {
     @State private var readingProgress: CGFloat = 0
     @State private var maxReadProgress: CGFloat = 0
     @State private var contentHeight: CGFloat = 0
+    @State private var viewportHeight: CGFloat = 0
     @State private var entryTime: Date = Date()
 
     var body: some View {
@@ -38,7 +39,7 @@ struct ArticleDetailView: View {
                     Text(article.headline)
                         .font(.title2.bold())
                         .lineSpacing(4)
-                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
 
                     Divider()
 
@@ -46,7 +47,19 @@ struct ArticleDetailView: View {
                         .font(.body)
                         .lineSpacing(8)
                         .foregroundStyle(.primary)
-                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    if let urlString = article.url, let destination = URL(string: urlString) {
+                        Link(destination: destination) {
+                            HStack(spacing: 6) {
+                                Text("Read full article")
+                                    .font(.subheadline.bold())
+                                Image(systemName: "arrow.up.right")
+                                    .font(.subheadline)
+                            }
+                            .foregroundStyle(Color.accentColor)
+                        }
+                    }
 
                     Divider()
 
@@ -56,8 +69,9 @@ struct ArticleDetailView: View {
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 20)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity)
             .background(
                 GeometryReader { geo in
                     Color.clear
@@ -70,13 +84,16 @@ struct ArticleDetailView: View {
             )
         }
         .coordinateSpace(name: "scroll")
+        .frame(maxWidth: .infinity)
+        .background(GeometryReader { geo in
+            Color.clear.onAppear { viewportHeight = geo.size.height }
+        })
         .ignoresSafeArea(edges: .top)
         .onAppear { entryTime = Date() }
         .onDisappear {
             onEngagement(Double(maxReadProgress), Date().timeIntervalSince(entryTime))
         }
         .onPreferenceChange(ScrollOffsetKey.self) { offset in
-            let viewportHeight = UIScreen.main.bounds.height
             let scrollable = contentHeight - viewportHeight
             if scrollable > 0 {
                 readingProgress = max(0, min(1, -offset / scrollable))

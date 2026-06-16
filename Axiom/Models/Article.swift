@@ -9,8 +9,9 @@ struct Article: Identifiable, Equatable {
     let body: String
     let imageURL: String
     let location: String?
+    let url: String?
 
-    init(headline: String, publisher: String, tags: [String], publishedAt: String, body: String, imageURL: String, location: String? = nil) {
+    init(headline: String, publisher: String, tags: [String], publishedAt: String, body: String, imageURL: String, location: String? = nil, url: String? = nil) {
         self.headline = headline
         self.publisher = publisher
         self.tags = tags
@@ -18,6 +19,7 @@ struct Article: Identifiable, Equatable {
         self.body = body
         self.imageURL = imageURL
         self.location = location
+        self.url = url
     }
 }
 
