@@ -6,6 +6,7 @@ struct HomeView: View {
     @Binding var searchText: String
     @Binding var readHistory: [Article]
     @State private var activeTagFilter: String? = nil
+    @State private var activePublisherFilter: String? = nil
     @State private var selectedArticle: Article? = nil
     @State private var displayCount = 20
 
@@ -15,6 +16,9 @@ struct HomeView: View {
         var result = articles
         if let tag = activeTagFilter {
             result = result.filter { $0.tags.contains(tag) }
+        }
+        if let publisher = activePublisherFilter {
+            result = result.filter { $0.publisher == publisher }
         }
         if !searchText.isEmpty {
             let q = searchText.lowercased()
@@ -83,6 +87,9 @@ struct HomeView: View {
                 if let tag = activeTagFilter {
                     filterBanner(for: tag)
                 }
+                if let publisher = activePublisherFilter {
+                    publisherBanner(for: publisher)
+                }
                 ForEach(displayedArticles) { article in
                     ArticleCard(
                         article: article,
@@ -91,6 +98,12 @@ struct HomeView: View {
                         onSelectTag: { tag in
                             withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                                 activeTagFilter = activeTagFilter == tag ? nil : tag
+                                displayCount = 20
+                            }
+                        },
+                        onSelectPublisher: { publisher in
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                activePublisherFilter = activePublisherFilter == publisher ? nil : publisher
                                 displayCount = 20
                             }
                         },
@@ -117,6 +130,14 @@ struct HomeView: View {
                     selectedArticle = nil
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                         activeTagFilter = tag
+                        displayCount = 20
+                    }
+                },
+                onSelectPublisher: { publisher in
+                    selectedArticle = nil
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        activePublisherFilter = activePublisherFilter == publisher ? nil : publisher
+                        displayCount = 20
                     }
                 }
             )
@@ -125,6 +146,79 @@ struct HomeView: View {
         } // end else
         }  // end Group
         .onChange(of: searchText) { displayCount = 20 }
+        .onChange(of: activeTagFilter) { if $1 != nil { activePublisherFilter = nil } }
+        .onChange(of: activePublisherFilter) { if $1 != nil { activeTagFilter = nil } }
+    }
+
+    @ViewBuilder
+    private func publisherBanner(for publisher: String) -> some View {
+        let theme = PublisherTheme.of(publisher)
+        let followed = isPublisherFollowed(publisher)
+
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                HStack(spacing: 6) {
+                    ZStack {
+                        Circle().fill(theme.color).frame(width: 16, height: 16)
+                        Text(String(theme.initials.prefix(1)))
+                            .font(.system(size: 8, weight: .bold))
+                            .foregroundStyle(.white)
+                    }
+                    Text(publisher)
+                        .font(.caption.bold())
+                        .foregroundStyle(theme.color)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .background(theme.color.opacity(0.1))
+                .clipShape(Capsule())
+                Spacer()
+                Button {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        activePublisherFilter = nil
+                    }
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(Color(.systemGray3))
+                        .font(.system(size: 18))
+                }
+                .buttonStyle(.plain)
+            }
+
+            if followed {
+                HStack(spacing: 6) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.subheadline)
+                        .foregroundStyle(.green)
+                    Text("You're following \(publisher)")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            } else {
+                HStack {
+                    Text("Follow \(publisher)?")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Button {
+                        withAnimation { togglePublisher(publisher) }
+                    } label: {
+                        Text("Follow")
+                            .font(.subheadline.bold())
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 6)
+                            .background(Color.accentColor)
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .padding(14)
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: .black.opacity(0.07), radius: 10, x: 0, y: 3)
     }
 
     @ViewBuilder

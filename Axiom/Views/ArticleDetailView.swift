@@ -10,6 +10,7 @@ struct ArticleDetailView: View {
     let isPublisherFollowed: Bool
     let onTogglePublisher: () -> Void
     let onSelectTag: (String) -> Void
+    var onSelectPublisher: (String) -> Void = { _ in }
 
     @Environment(\.dismiss) private var dismiss
     @State private var readingProgress: CGFloat = 0
@@ -103,21 +104,26 @@ struct ArticleDetailView: View {
     private var publisherRow: some View {
         HStack(spacing: 12) {
             let theme = PublisherTheme.of(article.publisher)
-            ZStack {
-                Circle().fill(theme.color).frame(width: 40, height: 40)
-                Text(theme.initials)
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(.white)
+            Button { onSelectPublisher(article.publisher) } label: {
+                HStack(spacing: 10) {
+                    ZStack {
+                        Circle().fill(theme.color).frame(width: 40, height: 40)
+                        Text(theme.initials)
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(.white)
+                    }
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(article.publisher)
+                            .font(.subheadline.bold())
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                        Text(article.publishedAt)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(article.publisher)
-                    .font(.subheadline.bold())
-                    .lineLimit(1)
-                Text(article.publishedAt)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+            .buttonStyle(.plain)
             .layoutPriority(1)
 
             Spacer(minLength: 8)

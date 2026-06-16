@@ -5,6 +5,7 @@ struct ArticleCard: View {
     let isPublisherFollowed: Bool
     let onTogglePublisher: () -> Void
     let onSelectTag: (String) -> Void
+    var onSelectPublisher: (String) -> Void = { _ in }
     var onTap: () -> Void = {}
 
     var body: some View {
@@ -34,29 +35,32 @@ struct ArticleCard: View {
 
                     Spacer(minLength: 4)
 
-                    HStack(spacing: 5) {
-                        let theme = PublisherTheme.of(article.publisher)
-                        Circle()
-                            .fill(theme.color)
-                            .frame(width: 14, height: 14)
-                            .overlay(
-                                Text(String(theme.initials.prefix(1)))
-                                    .font(.system(size: 7, weight: .bold))
-                                    .foregroundStyle(.white)
-                            )
-                        Text(article.publisher)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                        Text("·")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Text(article.publishedAt)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .fixedSize()
+                    Button { onSelectPublisher(article.publisher) } label: {
+                        HStack(spacing: 5) {
+                            let theme = PublisherTheme.of(article.publisher)
+                            Circle()
+                                .fill(theme.color)
+                                .frame(width: 14, height: 14)
+                                .overlay(
+                                    Text(String(theme.initials.prefix(1)))
+                                        .font(.system(size: 7, weight: .bold))
+                                        .foregroundStyle(.white)
+                                )
+                            Text(article.publisher)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                            Text("·")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Text(article.publishedAt)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                                .fixedSize()
+                        }
                     }
+                    .buttonStyle(.plain)
                 }
                 .frame(height: 88)
             }
