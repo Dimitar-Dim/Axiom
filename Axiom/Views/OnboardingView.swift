@@ -219,18 +219,18 @@ private struct TagToggleChip: View {
 private struct FlowLayout: Layout {
     var spacing: CGFloat = 8
 
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+    nonisolated func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         layout(subviews: subviews, width: proposal.width ?? 0).size
     }
 
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+    nonisolated func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
         let offsets = layout(subviews: subviews, width: bounds.width).offsets
         for (subview, point) in zip(subviews, offsets) {
             subview.place(at: CGPoint(x: bounds.minX + point.x, y: bounds.minY + point.y), proposal: .unspecified)
         }
     }
 
-    private func layout(subviews: Subviews, width: CGFloat) -> (offsets: [CGPoint], size: CGSize) {
+    private nonisolated func layout(subviews: Subviews, width: CGFloat) -> (offsets: [CGPoint], size: CGSize) {
         var offsets: [CGPoint] = []
         var x: CGFloat = 0
         var y: CGFloat = 0
