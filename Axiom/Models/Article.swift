@@ -1,6 +1,6 @@
 import Foundation
 
-struct Article: Identifiable {
+struct Article: Identifiable, Equatable {
     let id = UUID()
     let headline: String
     let publisher: String

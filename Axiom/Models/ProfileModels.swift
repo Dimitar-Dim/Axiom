@@ -1,16 +1,29 @@
 import Foundation
 
-struct FollowedTopic: Identifiable {
-    let id = UUID()
+struct FollowedTopic: Identifiable, Codable, Equatable {
+    let id: UUID
     let name: String
     let tag: String
     let articleCount: Int
+
+    init(name: String, tag: String, articleCount: Int, id: UUID = UUID()) {
+        self.id = id
+        self.name = name
+        self.tag = tag
+        self.articleCount = articleCount
+    }
 }
 
-struct FollowedPublisher: Identifiable {
-    let id = UUID()
+struct FollowedPublisher: Identifiable, Codable, Equatable {
+    let id: UUID
     let name: String
     let articleCount: Int
+
+    init(name: String, articleCount: Int, id: UUID = UUID()) {
+        self.id = id
+        self.name = name
+        self.articleCount = articleCount
+    }
 }
 
 extension FollowedTopic {

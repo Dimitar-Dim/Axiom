@@ -10,6 +10,7 @@ struct ProfileView: View {
     @Binding var topics: [FollowedTopic]
     @Binding var publishers: [FollowedPublisher]
     @Binding var readHistory: [Article]
+    @EnvironmentObject var profile: UserInterestProfile
     @State private var topicsExpanded = false
     @State private var publishersExpanded = false
     @State private var historyExpanded = false
@@ -84,8 +85,10 @@ struct ProfileView: View {
                                         withAnimation {
                                             if result.isTopic {
                                                 topics.removeAll { $0.id == result.id }
+                                                profile.record(.topicUnfollowed(tag: result.name))
                                             } else {
                                                 publishers.removeAll { $0.id == result.id }
+                                                profile.record(.publisherUnfollowed(name: result.name))
                                             }
                                         }
                                     }
@@ -106,7 +109,10 @@ struct ProfileView: View {
                         ) {
                             ForEach(topics) { topic in
                                 TopicRow(name: topic.name) {
-                                    withAnimation { topics.removeAll { $0.id == topic.id } }
+                                    withAnimation {
+                                        topics.removeAll { $0.id == topic.id }
+                                        profile.record(.topicUnfollowed(tag: topic.tag))
+                                    }
                                 }
                                 if topic.id != topics.last?.id {
                                     Divider().padding(.horizontal, 16)
@@ -121,7 +127,10 @@ struct ProfileView: View {
                         ) {
                             ForEach(publishers) { publisher in
                                 TopicRow(name: publisher.name) {
-                                    withAnimation { publishers.removeAll { $0.id == publisher.id } }
+                                    withAnimation {
+                                        publishers.removeAll { $0.id == publisher.id }
+                                        profile.record(.publisherUnfollowed(name: publisher.name))
+                                    }
                                 }
                                 if publisher.id != publishers.last?.id {
                                     Divider().padding(.horizontal, 16)
@@ -163,11 +172,16 @@ struct ProfileView: View {
                 onTogglePublisher: {
                     if let i = publishers.firstIndex(where: { $0.name == article.publisher }) {
                         publishers.remove(at: i)
+                        profile.record(.publisherUnfollowed(name: article.publisher))
                     } else {
                         publishers.append(FollowedPublisher(name: article.publisher, articleCount: 0))
+                        profile.record(.publisherFollowed(name: article.publisher))
                     }
                 },
-                onSelectTag: { _ in }
+                onSelectTag: { _ in },
+                onEngagement: { fraction, seconds in
+                    profile.record(.articleRead(article: article, readFraction: fraction, timeSpent: seconds))
+                }
             )
             .presentationDragIndicator(.visible)
         }

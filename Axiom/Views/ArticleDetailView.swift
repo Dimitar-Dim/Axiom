@@ -11,10 +11,14 @@ struct ArticleDetailView: View {
     let onTogglePublisher: () -> Void
     let onSelectTag: (String) -> Void
     var onSelectPublisher: (String) -> Void = { _ in }
+    /// Called when the view disappears. Parameters: max scroll depth reached [0-1], seconds on screen.
+    var onEngagement: (Double, TimeInterval) -> Void = { _, _ in }
 
     @Environment(\.dismiss) private var dismiss
     @State private var readingProgress: CGFloat = 0
+    @State private var maxReadProgress: CGFloat = 0
     @State private var contentHeight: CGFloat = 0
+    @State private var entryTime: Date = Date()
 
     var body: some View {
         ScrollView {
@@ -67,11 +71,16 @@ struct ArticleDetailView: View {
         }
         .coordinateSpace(name: "scroll")
         .ignoresSafeArea(edges: .top)
+        .onAppear { entryTime = Date() }
+        .onDisappear {
+            onEngagement(Double(maxReadProgress), Date().timeIntervalSince(entryTime))
+        }
         .onPreferenceChange(ScrollOffsetKey.self) { offset in
             let viewportHeight = UIScreen.main.bounds.height
             let scrollable = contentHeight - viewportHeight
             if scrollable > 0 {
                 readingProgress = max(0, min(1, -offset / scrollable))
+                maxReadProgress = max(maxReadProgress, readingProgress)
             }
         }
         .overlay(alignment: .top) {

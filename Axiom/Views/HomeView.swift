@@ -5,6 +5,7 @@ struct HomeView: View {
     @Binding var followedTopics: [FollowedTopic]
     @Binding var searchText: String
     @Binding var readHistory: [Article]
+    @EnvironmentObject var profile: UserInterestProfile
     @State private var activeTagFilter: String? = nil
     @State private var activePublisherFilter: String? = nil
     @State private var selectedArticle: Article? = nil
@@ -28,6 +29,10 @@ struct HomeView: View {
                 $0.tags.contains(where: { $0.lowercased().contains(q) })
             }
         }
+        // Apply recommendation ranking only on the unfiltered main feed
+        if activeTagFilter == nil && activePublisherFilter == nil && searchText.isEmpty {
+            return RecommendationEngine.rank(articles: result, profile: profile, readHistory: readHistory)
+        }
         return result
     }
 
@@ -48,19 +53,23 @@ struct HomeView: View {
     private func togglePublisher(_ publisher: String) {
         if let index = followedPublishers.firstIndex(where: { $0.name == publisher }) {
             followedPublishers.remove(at: index)
+            profile.record(.publisherUnfollowed(name: publisher))
         } else {
             followedPublishers.append(FollowedPublisher(name: publisher, articleCount: 0))
+            profile.record(.publisherFollowed(name: publisher))
         }
     }
 
     private func recordRead(_ article: Article) {
         readHistory.removeAll { $0.id == article.id }
         readHistory.insert(article, at: 0)
+        profile.record(.articleOpened(article: article))
     }
 
     private func followTopic(_ tag: String) {
         guard !isTopicFollowed(tag) else { return }
         followedTopics.append(FollowedTopic(name: tag, tag: tag, articleCount: 0))
+        profile.record(.topicFollowed(tag: tag))
     }
 
     var body: some View {
@@ -139,6 +148,9 @@ struct HomeView: View {
                         activePublisherFilter = activePublisherFilter == publisher ? nil : publisher
                         displayCount = 20
                     }
+                },
+                onEngagement: { fraction, seconds in
+                    profile.record(.articleRead(article: article, readFraction: fraction, timeSpent: seconds))
                 }
             )
             .presentationDragIndicator(.visible)
@@ -146,8 +158,8 @@ struct HomeView: View {
         } // end else
         }  // end Group
         .onChange(of: searchText) { displayCount = 20 }
-        .onChange(of: activeTagFilter) { if $1 != nil { activePublisherFilter = nil } }
-        .onChange(of: activePublisherFilter) { if $1 != nil { activeTagFilter = nil } }
+        .onChange(of: activeTagFilter) { if let tag = $1 { activePublisherFilter = nil; profile.record(.tagFiltered(tag: tag)) } }
+        .onChange(of: activePublisherFilter) { if let pub = $1 { activeTagFilter = nil; profile.record(.publisherFiltered(name: pub)) } }
     }
 
     @ViewBuilder
